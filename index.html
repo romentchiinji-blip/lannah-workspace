@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lannah's Workspace</title>
+  <meta name="description" content="Lannah's private workspace — video compliance, metadata rewriting, and work tracking." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- No external video libraries needed — pure JS metadata rewriter -->
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ═══ AMBIENT BACKGROUND ══════════════════════════════════════ -->
+<div class="ambient-bg" aria-hidden="true">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<!-- ═══ SIDEBAR ═════════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-top">
+    <!-- Logo -->
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 36 36" fill="none" width="36" height="36" aria-label="Lannah Workspace logo">
+          <circle cx="18" cy="18" r="18" fill="url(#logoGrad)"/>
+          <path d="M10 24 L16 12 L20 20 L23 15 L28 24" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle cx="18" cy="10" r="2.5" fill="white" opacity="0.6"/>
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="36" y2="36">
+              <stop offset="0%" stop-color="#e879a0"/>
+              <stop offset="100%" stop-color="#c084fc"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-title">MetaVault</span>
+        <span class="logo-sub">by Lannah</span>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav class="nav">
+      <button class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Home</span>
+      </button>
+      <button class="nav-item" data-page="tracker" onclick="navigateTo('tracker')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Work Tracker</span>
+        <span class="nav-badge" id="trackerBadge">0</span>
+      </button>
+      <button class="nav-item" data-page="scan" onclick="navigateTo('scan')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span>Scan Video</span>
+      </button>
+      <button class="nav-item" data-page="linkcheck" onclick="navigateTo('linkcheck')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span>Scan Link</span>
+      </button>
+      <button class="nav-item" data-page="metadata" onclick="navigateTo('metadata')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Metadata</span>
+      </button>
+    </nav>
+
+    <!-- Accounts -->
+    <div class="sidebar-section">
+      <p class="sidebar-label">Accounts</p>
+      <ul class="accounts-list" id="accountsList">
+        <li class="account-item"><span class="account-dot"></span><span>@lannah.main</span></li>
+        <li class="account-item"><span class="account-dot"></span><span>@lannah.backup</span></li>
+        <li class="account-item"><span class="account-dot"></span><span>@lannah.promo</span></li>
+        <li class="account-item"><span class="account-dot"></span><span>@lannah.fan1</span></li>
+        <li class="account-item"><span class="account-dot"></span><span>@lannah.collab</span></li>
+      </ul>
+      <button class="add-account-btn" id="addAccountBtn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Account
+      </button>
+    </div>
+  </div>
+
+  <!-- Schedule badge -->
+  <div class="sidebar-footer">
+    <div class="schedule-pill">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Active Mon – Sun
+    </div>
+    <button class="theme-btn" data-theme-toggle aria-label="Toggle theme">
+      <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═════════════════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="crumb" id="crumb">Home</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-date" id="topbarDate"></span>
+      <div class="avatar-wrap">
+        <div class="avatar">L</div>
+        <span class="avatar-name">Lannah</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ PAGE: DASHBOARD ════════════════════════════════════════ -->
+  <section class="page active" id="page-dashboard">
+
+    <!-- HERO WELCOME -->
+    <div class="hero-welcome">
+      <div class="hero-text">
+        <p class="hero-eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Good to see you, queen
+        </p>
+        <h1 class="hero-heading">Welcome back,<br/><em>Lannah</em> ✨</h1>
+        <p class="hero-sub">Your workspace is ready. Everything you need — all in one place.</p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <svg viewBox="0 0 200 200" width="180" height="180" fill="none">
+          <circle cx="100" cy="100" r="80" fill="url(#heroGrad)" opacity="0.15"/>
+          <circle cx="100" cy="100" r="55" fill="url(#heroGrad)" opacity="0.12"/>
+          <circle cx="100" cy="100" r="32" fill="url(#heroGrad)" opacity="0.2"/>
+          <path d="M60 120 Q80 70 100 100 Q120 130 140 85" stroke="url(#heroStroke)" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <circle cx="60" cy="120" r="5" fill="#e879a0"/>
+          <circle cx="100" cy="100" r="5" fill="#c084fc"/>
+          <circle cx="140" cy="85" r="5" fill="#e879a0"/>
+          <circle cx="78" cy="60" r="3" fill="#fbbf24" opacity="0.8"/>
+          <circle cx="130" cy="140" r="3" fill="#fbbf24" opacity="0.8"/>
+          <circle cx="145" cy="65" r="2" fill="#e879a0" opacity="0.6"/>
+          <circle cx="55" cy="145" r="2" fill="#c084fc" opacity="0.6"/>
+          <defs>
+            <linearGradient id="heroGrad" x1="0" y1="0" x2="200" y2="200">
+              <stop offset="0%" stop-color="#e879a0"/>
+              <stop offset="100%" stop-color="#c084fc"/>
+            </linearGradient>
+            <linearGradient id="heroStroke" x1="60" y1="120" x2="140" y2="85">
+              <stop offset="0%" stop-color="#e879a0"/>
+              <stop offset="100%" stop-color="#c084fc"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
+
+    <!-- PERIOD BLACK GIRL BUTTON (prominent, dashboard) -->
+    <div class="pbg-card">
+      <div class="pbg-info">
+        <div class="pbg-icon">🖤</div>
+        <div>
+          <h3 class="pbg-title">Period Black Girl</h3>
+          <p class="pbg-desc">Tap to mark today as a worked day — it'll show up as a ✓ on your calendar.</p>
+        </div>
+      </div>
+      <button class="pbg-btn" id="pbgBtnDash" onclick="markWorkDay()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        I Worked Today
+      </button>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon si-pink">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="stat-body">
+          <p class="stat-num" id="statDaysWorked">0</p>
+          <p class="stat-lbl">Days Worked</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-green">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="stat-body">
+          <p class="stat-num" id="statPassed">0</p>
+          <p class="stat-lbl">Passed Scans</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-red">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+        <div class="stat-body">
+          <p class="stat-num" id="statFailed">0</p>
+          <p class="stat-lbl">Flagged Scans</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-purple">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
+        </div>
+        <div class="stat-body">
+          <p class="stat-num" id="statRewritten">0</p>
+          <p class="stat-lbl">Metadata Rewrites</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="quick-row">
+      <button class="quick-card" onclick="navigateTo('scan')">
+        <div class="quick-card-icon qc-scan">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <div class="quick-card-body">
+          <p class="quick-card-title">Scan Video</p>
+          <p class="quick-card-sub">Check Meta guidelines</p>
+        </div>
+        <svg class="quick-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+      <button class="quick-card" onclick="navigateTo('metadata')">
+        <div class="quick-card-icon qc-meta">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="quick-card-body">
+          <p class="quick-card-title">Rewrite Metadata</p>
+          <p class="quick-card-sub">Beat duplicate detection</p>
+        </div>
+        <svg class="quick-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+      <button class="quick-card" onclick="navigateTo('linkcheck')">
+        <div class="quick-card-icon qc-link">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </div>
+        <div class="quick-card-body">
+          <p class="quick-card-title">Scan Link</p>
+          <p class="quick-card-sub">Prevent account flagging</p>
+        </div>
+        <svg class="quick-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+      <button class="quick-card" onclick="navigateTo('tracker')">
+        <div class="quick-card-icon qc-track">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="quick-card-body">
+          <p class="quick-card-title">Work Tracker</p>
+          <p class="quick-card-sub">View your calendar</p>
+        </div>
+        <svg class="quick-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- GUIDELINES REF -->
+    <div class="glass-card">
+      <h2 class="card-heading">Meta Guidelines at a Glance</h2>
+      <div class="guidelines-grid">
+        <div class="gl-item"><span class="gl-dot"></span><div><strong>Aspect Ratio</strong><p>9:16, 1:1, 4:5, or 16:9</p></div></div>
+        <div class="gl-item"><span class="gl-dot"></span><div><strong>Duration</strong><p>Reels: 3s – 90s</p></div></div>
+        <div class="gl-item"><span class="gl-dot"></span><div><strong>Resolution</strong><p>Min 720p — 4K supported</p></div></div>
+        <div class="gl-item"><span class="gl-dot"></span><div><strong>File Size</strong><p>Up to 4 GB</p></div></div>
+        <div class="gl-item"><span class="gl-dot"></span><div><strong>Format</strong><p>MP4 or MOV recommended</p></div></div>
+        <div class="gl-item"><span class="gl-dot"></span><div><strong>Frame Rate</strong><p>23 – 60 fps</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ PAGE: WORK TRACKER ═════════════════════════════════════ -->
+  <section class="page" id="page-tracker">
+    <div class="page-hdr">
+      <div>
+        <h1 class="page-title">Work Tracker</h1>
+        <p class="page-sub">Track every day you showed up and put in work. 🖤</p>
+      </div>
+    </div>
+
+    <!-- BIG BUTTON -->
+    <div class="pbg-hero">
+      <div class="pbg-hero-glow" aria-hidden="true"></div>
+      <div class="pbg-hero-inner">
+        <div class="pbg-hero-emoji">🖤</div>
+        <h2 class="pbg-hero-title">Period Black Girl</h2>
+        <p class="pbg-hero-sub">Press this button every time you work. It marks today with a green check on your calendar below.</p>
+        <button class="pbg-hero-btn" id="pbgBtnTracker" onclick="markWorkDay()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          I Worked Today ✓
+        </button>
+        <p class="pbg-today" id="pbgTodayLabel"></p>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="glass-card">
+      <div class="cal-header">
+        <button class="cal-nav" id="calPrev" onclick="shiftMonth(-1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <h2 class="cal-month" id="calMonthLabel"></h2>
+        <button class="cal-nav" id="calNext" onclick="shiftMonth(1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+      <div class="cal-weekdays">
+        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend">
+        <span class="legend-item"><span class="legend-dot ld-worked"></span> Worked</span>
+        <span class="legend-item"><span class="legend-dot ld-today"></span> Today</span>
+      </div>
+    </div>
+
+    <!-- HISTORY LIST -->
+    <div class="glass-card">
+      <h2 class="card-heading">Work Log</h2>
+      <div class="work-log" id="workLog">
+        <div class="log-empty">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <p>No days logged yet. Press the button above when you work!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ PAGE: SCAN LINK ═══════════════════════════════════════ -->
+  <section class="page" id="page-linkcheck">
+    <div class="page-hdr">
+      <h1 class="page-title">Scan Link</h1>
+      <p class="page-sub">Paste any link — bio links, Linktree, link.me, OnlyFans, redirects — and see if Meta would flag it before you post it.</p>
+    </div>
+
+    <!-- INPUT CARD -->
+    <div class="glass-card link-input-card">
+      <div class="link-input-wrap">
+        <div class="link-input-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </div>
+        <input
+          type="url"
+          id="linkInput"
+          class="link-input"
+          placeholder="https://link.me/lannah or any bio link…"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+        />
+        <button class="link-scan-btn" id="linkScanBtn" onclick="scanLink()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Scan
+        </button>
+      </div>
+      <div class="link-recent" id="linkRecent"></div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="link-result hidden" id="linkResult">
+      <div class="verdict-banner" id="linkVerdictBanner"></div>
+      <div class="glass-card" id="linkResultDetails"></div>
+      <div class="glass-card link-tips-card" id="linkTips"></div>
+    </div>
+
+    <!-- KNOWN RISKY DOMAINS REFERENCE -->
+    <div class="glass-card">
+      <h2 class="card-heading">Known High-Risk Domains on Meta</h2>
+      <p style="font-size:var(--text-xs);color:var(--muted);margin-bottom:var(--sp4)">These domains are commonly flagged or restricted by Instagram and Meta ads. Using them in your bio or posts increases your risk of account action.</p>
+      <div class="risk-domain-grid" id="riskDomainGrid"></div>
+    </div>
+  </section>
+
+  <!-- ═══ PAGE: SCAN VIDEO ═══════════════════════════════════════ -->
+  <section class="page" id="page-scan">
+    <div class="page-hdr">
+      <h1 class="page-title">Scan Video</h1>
+      <p class="page-sub">Drop your video to instantly check it against Meta's content guidelines.</p>
+    </div>
+
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="videoInput" accept="video/*" hidden />
+      <div class="drop-inner" id="dropInner">
+        <div class="drop-icon-wrap">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        </div>
+        <p class="drop-title">Drop your video here</p>
+        <p class="drop-hint">or <button class="drop-link" id="browseBtn">choose a file</button></p>
+        <p class="drop-types">MP4 · MOV · AVI · MKV · up to 4GB</p>
+      </div>
+    </div>
+
+    <div class="scan-result hidden" id="scanResult">
+      <div class="verdict-banner" id="verdictBanner"></div>
+      <div class="glass-card" id="resultDetails"></div>
+      <div class="result-acts" id="resultActions"></div>
+    </div>
+
+    <div class="video-preview-wrap hidden" id="videoPreviewWrap">
+      <video id="videoPreview" controls class="video-preview"></video>
+    </div>
+  </section>
+
+  <!-- ═══ PAGE: METADATA ════════════════════════════════════════ -->
+  <section class="page" id="page-metadata">
+    <div class="page-hdr">
+      <h1 class="page-title">Metadata Rewriter</h1>
+      <p class="page-sub">Randomize your video's metadata so Instagram can't detect it's been posted before. Zero quality loss — 4K stays 4K.</p>
+    </div>
+
+    <div class="meta-steps">
+
+      <!-- Step 1 -->
+      <div class="meta-step glass-card">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <h3>Load Your Video</h3>
+          <p>Select the video you want to rewrite metadata for.</p>
+          <div class="drop-zone drop-zone--sm" id="metaDropZone">
+            <input type="file" id="metaVideoInput" accept="video/*" hidden />
+            <div class="drop-inner">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+              <p class="drop-title" style="font-size:0.9rem">Drop or <button class="drop-link" id="metaBrowseBtn">browse</button></p>
+            </div>
+          </div>
+          <div class="file-chip hidden" id="metaFileInfo">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            <span id="metaFileName">video.mp4</span>
+            <span class="chip-size" id="metaFileSize"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="meta-step glass-card">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <h3>Detected Metadata</h3>
+          <p>What Instagram can currently read from your video.</p>
+          <div class="meta-table-box" id="metaTableWrap">
+            <div class="meta-empty">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <p>Load a video to see its metadata</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="meta-step glass-card">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <h3>Rewrite &amp; Download</h3>
+          <p>Strip all identifying info and inject randomized metadata. Your video quality stays exactly the same.</p>
+          <div class="rewrite-options">
+            <label class="opt-row"><input type="checkbox" checked id="optTitle" /><span>Randomize title &amp; filename fingerprint</span></label>
+            <label class="opt-row"><input type="checkbox" checked id="optDate" /><span>Randomize creation date &amp; timestamps</span></label>
+            <label class="opt-row"><input type="checkbox" checked id="optDevice" /><span>Remove device &amp; camera model info</span></label>
+            <label class="opt-row"><input type="checkbox" checked id="optGPS" /><span>Strip GPS &amp; location data</span></label>
+            <label class="opt-row"><input type="checkbox" checked id="optEncoder" /><span>Randomize encoder fingerprint</span></label>
+          </div>
+          <button class="rewrite-btn" id="rewriteBtn" disabled>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Rewrite &amp; Download
+          </button>
+          <div class="progress-wrap hidden" id="rewriteProgress">
+            <div class="progress-track"><div class="progress-fill" id="progressBar"></div></div>
+            <p class="progress-lbl" id="progressLabel">Processing…</p>
+          </div>
+          <div class="success-banner hidden" id="rewriteSuccess">
+            <div class="success-ico">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div style="flex:1">
+              <p class="success-ttl">Done! Metadata rewritten successfully.</p>
+              <p class="success-sub">Your video is now undetectable as previously posted content.</p>
+            </div>
+          </div>
+          <!-- Safari banner (shown when inside iframe) -->
+          <div class="safari-banner hidden" id="safariBanner">
+            <div class="safari-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div style="flex:1">
+              <p class="safari-ttl">Open in Safari to save your video</p>
+              <p class="safari-sub">Downloads don't work inside the Perplexity app. Tap below to open the workspace in Safari, then run Metadata again.</p>
+            </div>
+            <a class="safari-btn" id="safariOpenBtn" href="https://transcendent-halva-e9be16.netlify.app" target="_blank" rel="noopener">
+              Open in Safari
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+          </div>
+          <!-- Download area — appears after rewrite (only in standalone Safari) -->
+          <div class="dl-area hidden" id="dlArea">
+            <button class="dl-btn dl-share" id="shareBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Save Video to Device
+            </button>
+            <p class="dl-ios-tip" id="dlIosTip" style="display:none">
+              📱 <strong>iPhone:</strong> Tap above → choose <em>"Save Video"</em> or <em>"Save to Files"</em>
+            </p>
+            <a class="dl-link" id="downloadLink" download style="display:none">or tap here to open &amp; save manually</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══ ADD ACCOUNT MODAL ════════════════════════════════════════ -->
+<div class="backdrop hidden" id="backdrop">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>Add Account</h3>
+      <button class="modal-x" id="modalClose">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <input class="modal-input" id="newAccountInput" type="text" placeholder="@username" />
+    <button class="modal-submit" id="modalSubmit">Add Account</button>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═════════════════════════════════════════════════════ -->
+<div class="toast hidden" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
