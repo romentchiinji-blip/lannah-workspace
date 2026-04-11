@@ -619,130 +619,66 @@ rwBtn.addEventListener('click', async () => {
 ──────────────────────────────────────────────────────── */
 
 async function rewriteMeta(opts) {
-  progBar.style.width = '15%';
-  progLbl.textContent = 'Loading file…';
-  await tick();
-
-  const buf = await metaFile.arrayBuffer();
-  const ext = metaFile.name.split('.').pop().toLowerCase();
-  const newName = rndStr(14) + '.' + ext;
-
-  progBar.style.width = '35%';
-  progLbl.textContent = 'Scanning metadata structure…';
-  await tick();
-
-  let outBuf;
-  if (['mp4','mov','m4v','3gp','3g2'].includes(ext)) {
-    outBuf = patchMp4(buf, opts);
-  } else {
-    // For other formats just pass the raw bytes through
-    outBuf = buf;
-  }
-
-  progBar.style.width = '75%';
-  progLbl.textContent = 'Building output file…';
-  await tick();
-
+  const ext      = metaFile.name.split('.').pop().toLowerCase();
+  const newName  = rndStr(14) + '.' + ext;
   const mimeType = metaFile.type || 'video/mp4';
-  const blob = new Blob([outBuf], { type: mimeType });
 
-  // Revoke previous URL if any
-  if (_blobUrl) URL.revokeObjectURL(_blobUrl);
-  _blobUrl = URL.createObjectURL(blob);
-  _blobFile = new File([blob], newName, { type: mimeType });
+  progBar.style.width = '8%';
+  progLbl.textContent = 'Reading file…';
 
-  // Fallback link (shown as secondary on iOS)
-  dlLink.href = _blobUrl;
-  dlLink.download = newName;
+  // Read into ArrayBuffer — yields to browser between chunks so UI stays alive
+  const buf = await metaFile.arrayBuffer();
 
-  progBar.style.width = '100%';
-  progLbl.textContent = 'Done!';
-  await tick();
+  progBar.style.width = '18%';
+  progLbl.textContent = 'Processing in background…';
 
-  setTimeout(() => {
-    rwProg.classList.add('hidden');
-    rwSuccess.classList.remove('hidden');
+  await new Promise((resolve, reject) => {
+    const workerUrl = new URL('rewrite-worker.js', location.href).href;
+    const worker = new Worker(workerUrl);
 
-    if (inIframe) {
-      // Inside Perplexity iframe — can't download, show the Safari banner prominently
-      safariBanner.classList.remove('hidden');
-      showToast('Open in Safari to save your video — tap the banner below ↗️', '📱');
-    } else {
-      // Standalone Safari / desktop — show download button
-      dlArea.classList.remove('hidden');
-      if (isIOS) {
-        dlIosTip.style.display = 'block';
-        dlLink.style.display = 'inline';
+    worker.onmessage = (e) => {
+      const msg = e.data;
+      if (msg.type === 'progress') {
+        progBar.style.width = msg.p + '%';
+        progLbl.textContent = msg.label;
+      } else if (msg.type === 'done') {
+        worker.terminate();
+        const blob = new Blob([msg.outBuf], { type: mimeType });
+        if (_blobUrl) URL.revokeObjectURL(_blobUrl);
+        _blobUrl  = URL.createObjectURL(blob);
+        _blobFile = new File([blob], msg.newName, { type: mimeType });
+        dlLink.href     = _blobUrl;
+        dlLink.download = msg.newName;
+        progBar.style.width = '100%';
+        progLbl.textContent = 'Done!';
+        setTimeout(() => {
+          rwProg.classList.add('hidden');
+          rwSuccess.classList.remove('hidden');
+          if (inIframe) {
+            safariBanner.classList.remove('hidden');
+            showToast('Open in Safari to save — tap the banner ↗️', '📱');
+          } else {
+            dlArea.classList.remove('hidden');
+            if (isIOS) { dlIosTip.style.display = 'block'; dlLink.style.display = 'inline'; }
+            showToast('Video ready — tap Save Video to download 🎬', '✅');
+          }
+          rwBtn.disabled = false;
+          stats.rewritten++;
+          updateStats();
+        }, 300);
+        resolve();
+      } else if (msg.type === 'error') {
+        worker.terminate();
+        reject(new Error(msg.message));
       }
-      showToast('Video ready — tap Save Video to download 🎬', '✅');
-    }
-    rwBtn.disabled = false;
-    stats.rewritten++;
-    updateStats();
-  }, 400);
+    };
+    worker.onerror = (err) => { worker.terminate(); reject(err); };
+    // Transfer buf to worker — zero-copy, no memory spike even on large 4K files
+    worker.postMessage({ buf, opts, newName }, [buf]);
+  });
 }
 
-function tick() {
-  return new Promise(r => setTimeout(r, 30));
-}
-
-/* ── MP4/MOV box patcher ─────────────────────────────── */
-function patchMp4(buf, opts) {
-  const view = new DataView(buf);
-  const out = new Uint8Array(buf.slice(0)); // copy
-  const outView = new DataView(out.buffer);
-
-  let offset = 0;
-  while (offset < out.byteLength - 8) {
-    const size = outView.getUint32(offset);
-    if (size < 8) break;
-    const type = boxType(out, offset + 4);
-
-    if (type === 'moov') {
-      // recurse into moov
-      patchBox(out, outView, offset + 8, offset + size, opts);
-    }
-    offset += size;
-  }
-  return out.buffer;
-}
-
-function patchBox(out, outView, start, end, opts) {
-  let offset = start;
-  while (offset < end - 8) {
-    const size = outView.getUint32(offset);
-    if (size < 8 || offset + size > end) break;
-    const type = boxType(out, offset + 4);
-
-    if (type === 'udta') {
-      // Zero out the entire udta box contents (keeps size intact)
-      zeroRange(out, offset + 8, offset + size);
-    } else if (type === 'mvhd' && opts.date) {
-      // mvhd: bytes 8-11 = version/flags, 12-15 = creation_time, 16-19 = mod_time (v0)
-      //       or 16-23 = creation_time (v1). Patch v0 only (most common)
-      const ver = out[offset + 8];
-      if (ver === 0) {
-        // creation_time at offset+12, mod_time at offset+16 — set to random past timestamp
-        const rnd = Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 60 * 60 * 24 * 600) + 2082844800;
-        outView.setUint32(offset + 12, rnd >>> 0);
-        outView.setUint32(offset + 16, rnd >>> 0);
-      }
-    } else if (type === 'trak' || type === 'mdia' || type === 'minf' || type === 'stbl' || type === 'meta' || type === 'ilst') {
-      patchBox(out, outView, offset + 8, offset + size, opts);
-    }
-    offset += size;
-  }
-}
-
-function boxType(arr, offset) {
-  return String.fromCharCode(arr[offset], arr[offset+1], arr[offset+2], arr[offset+3]);
-}
-
-function zeroRange(arr, from, to) {
-  for (let i = from; i < to; i++) arr[i] = 0;
-}
-
-function finishRewrite() {} // kept for compat — not used
+function finishRewrite() {} // kept for compat
 
 /* ─── ALL DONE ──────────────────────────────────────── */
 console.log('%c🖤 Lannah\'s Workspace — loaded', 'color:#e879a0;font-weight:700;font-size:13px');
