@@ -25,6 +25,8 @@
 
   function showApp() {
     document.getElementById('loginScreen').classList.add('hidden');
+    const app = document.getElementById('appWrapper');
+    if (app) app.style.display = '';
   }
 
   window.tryLogin = async function () {
