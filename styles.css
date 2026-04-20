@@ -1344,3 +1344,104 @@ svg { display: block; flex-shrink: 0; }
   .task-new-row { flex-direction: column; align-items: stretch; }
   .task-title-input { width: 100%; }
 }
+
+/* ═══════════════════════════════════════════════════
+   LOGIN SCREEN
+═══════════════════════════════════════════════════ */
+
+.login-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  padding: var(--sp4);
+}
+
+.login-screen.hidden { display: none; }
+
+.login-card {
+  background: var(--surface1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-2xl, 1.5rem);
+  padding: 3rem 2.5rem 2.5rem;
+  width: 100%; max-width: 400px;
+  text-align: center;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.45);
+  display: flex; flex-direction: column; align-items: center; gap: 1.25rem;
+}
+
+.login-logo {
+  width: 72px; height: 72px;
+  background: var(--accent-dim);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+  margin-bottom: 0.25rem;
+}
+
+.login-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text1);
+  margin: 0;
+}
+
+.login-sub {
+  font-size: var(--text-sm);
+  color: var(--text3);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.login-field-wrap {
+  display: flex; gap: var(--sp2); width: 100%; flex-wrap: wrap;
+}
+
+.login-input {
+  flex: 1; min-width: 0;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  color: var(--text1);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  padding: 0.75rem 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.login-input:focus { border-color: var(--accent); }
+.login-input::placeholder { color: var(--text3); }
+
+.login-btn {
+  display: flex; align-items: center; gap: var(--sp2);
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-lg);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.login-btn:hover { opacity: 0.88; }
+
+.login-error {
+  color: var(--red);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  margin: 0;
+}
+.login-error.hidden { display: none; }
+
+/* Shake animation on wrong password */
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%      { transform: translateX(-8px); }
+  40%      { transform: translateX(8px); }
+  60%      { transform: translateX(-5px); }
+  80%      { transform: translateX(5px); }
+}
+.login-card.shake { animation: shake 0.4s ease; }

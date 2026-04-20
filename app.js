@@ -1,4 +1,56 @@
 /* ═══════════════════════════════════════════════════
+   LOGIN GATE
+   Passwords are hashed with SHA-256 — never stored as plaintext.
+═══════════════════════════════════════════════════ */
+
+(function () {
+  // SHA-256 hashes of the passwords
+  // Winner2002 -> hash below
+  // Lannah2002 -> hash below
+  const VALID_HASHES = new Set([
+    '4a6626761a2e6ad72a149f288b4c8305723493ae3713f2943159db9109d7759e',  // Elijah
+    '2777bdb48a99aff801daf631c2518f8270617b4bdcb51de12e54800f81717a7d'   // Lannah
+  ]);
+
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  const SESSION_KEY = 'lannah_auth';
+
+  function isAuthed() {
+    return sessionStorage.getItem(SESSION_KEY) === '1';
+  }
+
+  function showApp() {
+    document.getElementById('loginScreen').classList.add('hidden');
+  }
+
+  window.tryLogin = async function () {
+    const pass = document.getElementById('loginPass').value;
+    const hash = await sha256(pass);
+    const card = document.querySelector('.login-card');
+    const err  = document.getElementById('loginError');
+    if (VALID_HASHES.has(hash)) {
+      sessionStorage.setItem(SESSION_KEY, '1');
+      showApp();
+    } else {
+      err.classList.remove('hidden');
+      card.classList.remove('shake');
+      void card.offsetWidth; // reflow to restart animation
+      card.classList.add('shake');
+      document.getElementById('loginPass').value = '';
+    }
+  };
+
+  // On load — check session
+  if (isAuthed()) {
+    showApp();
+  }
+})();
+
+/* ═══════════════════════════════════════════════════
    LANNAH'S WORKSPACE — app.js
 ═══════════════════════════════════════════════════ */
 
