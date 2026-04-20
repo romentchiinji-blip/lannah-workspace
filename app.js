@@ -26,7 +26,17 @@
   function showApp() {
     document.getElementById('loginScreen').classList.add('hidden');
     const app = document.getElementById('appWrapper');
-    if (app) app.style.display = '';
+    if (app) {
+      app.style.display = '';
+      // Re-run all renders now that DOM is visible
+      setTimeout(() => {
+        if (typeof renderTasks    === 'function') renderTasks();
+        if (typeof renderCalendar === 'function') renderCalendar();
+        if (typeof updateStats    === 'function') updateStats();
+        // accounts are rendered inline on page load
+        if (typeof renderRecent   === 'function') renderRecent();
+      }, 0);
+    }
   }
 
   window.tryLogin = async function () {
