@@ -29,12 +29,22 @@
 
 /* ── GLOBAL STATE ───────────────────────────────────── */
 let stats = { days: 0, passed: 0, failed: 0, rewritten: 0 };
-// workedDays: Set of 'YYYY-MM-DD' strings
-let workedDays = new Set();
+
+// ── localStorage helpers ─────────────────────────────
+function lsGet(key, fallback) {
+  try { const v = localStorage.getItem(key); return v !== null ? JSON.parse(v) : fallback; }
+  catch { return fallback; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+// workedDays: Set of 'YYYY-MM-DD' strings — persisted
+let workedDays = new Set(lsGet('lannah_worked_days', []));
 stats.days = workedDays.size;
 
 function saveWorkedDays() {
-  // In-memory only — no storage APIs needed
+  lsSet('lannah_worked_days', [...workedDays]);
 }
 
 function todayKey() {
@@ -66,7 +76,8 @@ const PAGE_NAMES = {
   dashboard: 'Home',
   tracker: 'Work Tracker',
   scan: 'Scan Video',
-  metadata: 'Metadata'
+  metadata: 'Metadata',
+  tasks: 'Task for Today'
 };
 
 function navigateTo(page) {
@@ -1037,3 +1048,123 @@ function renderRecent() {
 document.getElementById('linkInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') scanLink();
 });
+
+/* ═══════════════════════════════════════════════════
+   TASK FOR TODAY
+═══════════════════════════════════════════════════ */
+
+// tasks: array of { id, title, steps: [{text, imgData}] }
+let tasks = lsGet('lannah_tasks', []);
+
+function saveTasks() { lsSet('lannah_tasks', tasks); }
+
+function renderTasks() {
+  const list = document.getElementById('taskList');
+  if (!list) return;
+  if (tasks.length === 0) {
+    list.innerHTML = `<div class="task-empty">No tasks yet. Add one above! 🌸</div>`;
+    return;
+  }
+  list.innerHTML = tasks.map((t, ti) => `
+    <div class="task-card" id="tc-${t.id}">
+      <div class="task-card-hdr">
+        <span class="task-card-title">${escHtml(t.title)}</span>
+        <div class="task-card-btns">
+          <button class="task-icon-btn" onclick="addStep(${ti})" title="Add step">+ Step</button>
+          <button class="task-icon-btn danger" onclick="deleteTask(${ti})" title="Delete task">&times;</button>
+        </div>
+      </div>
+      <ol class="task-steps">
+        ${t.steps.map((s, si) => `
+          <li class="task-step">
+            ${s.imgData ? `<img class="task-step-img" src="${s.imgData}" alt="step ${si+1}">` : ''}
+            <span class="task-step-text">${escHtml(s.text)}</span>
+            <button class="task-step-del" onclick="deleteStep(${ti},${si})">&times;</button>
+          </li>
+        `).join('')}
+      </ol>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function addTask() {
+  const inp = document.getElementById('newTaskTitle');
+  const title = inp ? inp.value.trim() : '';
+  if (!title) { showToast('Enter a task title first', '⚠️'); return; }
+  tasks.push({ id: Date.now(), title, steps: [] });
+  saveTasks();
+  renderTasks();
+  if (inp) inp.value = '';
+  showToast('Task added!', '✅');
+}
+
+function deleteTask(ti) {
+  tasks.splice(ti, 1);
+  saveTasks();
+  renderTasks();
+}
+
+// Pending step state (image + text per task)
+const _stepImg = {};
+
+function taskStepImgChange(ti, inputEl) {
+  const file = inputEl.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _stepImg[ti] = e.target.result;
+    const prev = document.getElementById(`stepPrev-${ti}`);
+    if (prev) { prev.src = e.target.result; prev.classList.remove('hidden'); }
+  };
+  reader.readAsDataURL(file);
+}
+
+function addStep(ti) {
+  // Build inline step adder below the task card
+  // Check if adder already open
+  const existing = document.getElementById(`step-adder-${ti}`);
+  if (existing) { existing.remove(); return; }
+  const card = document.getElementById(`tc-${tasks[ti].id}`);
+  if (!card) return;
+  const adder = document.createElement('div');
+  adder.className = 'step-adder';
+  adder.id = `step-adder-${ti}`;
+  adder.innerHTML = `
+    <textarea class="step-adder-text" id="stepText-${ti}" placeholder="Describe this step…" rows="2"></textarea>
+    <label class="step-img-label">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Add Image
+      <input type="file" accept="image/*" class="hidden" onchange="taskStepImgChange(${ti}, this)">
+    </label>
+    <img id="stepPrev-${ti}" class="step-prev hidden" src="" alt="preview">
+    <div class="step-adder-btns">
+      <button class="act-btn act-primary" onclick="confirmAddStep(${ti})">Add Step</button>
+      <button class="act-btn" onclick="document.getElementById('step-adder-${ti}').remove(); delete _stepImg[${ti}]">Cancel</button>
+    </div>
+  `;
+  card.appendChild(adder);
+}
+
+function confirmAddStep(ti) {
+  const textEl = document.getElementById(`stepText-${ti}`);
+  const text = textEl ? textEl.value.trim() : '';
+  if (!text) { showToast('Write a description for this step', '⚠️'); return; }
+  tasks[ti].steps.push({ text, imgData: _stepImg[ti] || null });
+  delete _stepImg[ti];
+  saveTasks();
+  renderTasks();
+  showToast('Step added!', '✅');
+}
+
+function deleteStep(ti, si) {
+  tasks[ti].steps.splice(si, 1);
+  saveTasks();
+  renderTasks();
+}
+
+// Init
+renderTasks();
